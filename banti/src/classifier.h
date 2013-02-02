@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+extern std::vector<std::string> char_codes;//[NCLASSES];
+
 class Classifier {
     /* IMPORTANT:
      * Matlab dumps matrices in to bin files by alternating the last column least
@@ -58,6 +60,7 @@ class Classifier {
     inline float GetIthFeature(PIX *p, int iFeat);
 
 public:
+
     Classifier(std::string dir);
     virtual ~Classifier();
     void PopulateFeatures(Blob& blob);

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <assert.h>
 #include "page.h"
 #include "math_utils.h"
 
@@ -126,32 +127,22 @@ void Page::Deskew() {
 
 void Page::MorphToWords() {
     // TODO: Clean up
-#if 0
-	int best_size = 0;
-	pix_words_ = pixWordMaskByDilation(pix_400_, letter_ht>>1, &best_size);
-	cout << "\n\tBest Size to Dilate for words: " << best_size;
-#elif 1
+    BOXA* letter_boxes = pixConnComp(pix_400_, NULL, 8);
+    vector<int> wds, hts;
+    for(int i=0; i < letter_boxes->n; ++i){
+    	wds.push_back(letter_boxes->box[i]->w);
+    	hts.push_back(letter_boxes->box[i]->h);
+    }
+    boxaDestroy(&letter_boxes);
+    int median_wd = VecMedian(wds);
+    int median_ht = VecMedian(hts);
+    cout << "\n\tMedian Letter width: " << median_wd
+    	 << " (" << median_wd * 72 / x_res_ << " pts)"
+    	 << "\n\tMedian Letter Height: " << median_ht
+    	 << " (" << median_ht * 72 / y_res_ << " pts)";
 	pix_words_ = pixCloseBrick(NULL, pix_400_,
-                                best_harmonic_ >> 2, best_harmonic_ >> 2);
-#elif 0
-	pix_words_ = pixDilateBrick(NULL, pix_400_, letter_ht>>1, letter_ht);
-#elif 0
-	std::ostringstream s;
-	s << "C" << (letter_ht<<1) << "." << 1<< "+"
-	<< "C" << 1 << "." << (letter_ht<<1)<< "+"
-	<< "O" << (letter_ht<<2) << "." << (letter_ht<<2)<< "+"
-	;
-
-	pix_words_ = pixMorphSequence(pix_400_, s.str().c_str(), 0);
-#elif 0
-	std::ostringstream s;
-	s << "C" << 3 << "." << (letter_ht) << "+"
-	<< "D" << (letter_ht<<3) << "." << 1 << "+"
-	//	  << "O" << (letter_ht<<2) << "." << (letter_ht<<2)<< "+"
-	;
-
-	pix_words_ = pixMorphSequence(pix_400_, s.str().c_str(), 0);
-#endif
+                                median_wd,
+                                median_ht);
 }
 
 void Page::MorphToLines() {
@@ -194,8 +185,10 @@ void Page::CalcHist() {
 	VecMax<double> (magfft.begin() + 1, magfft.begin() + (next_2_power / 2),
 			max_val, max_at);
 	best_harmonic_ = (int) (next_2_power / (max_at + 1));
+	best_harmonic_amp_ = (int) max_val;
 	cout << "\n\tBest Harmonic : " << best_harmonic_ << "\tMax At : " << max_at
-		 << "\tPow of 2 : " << next_2_power;
+		 << "\tPow of 2 : " << next_2_power
+		 << "\n\tAmplitude of Best Harmonic : " << best_harmonic_amp_ ;
 
 	// Do a Gaussian blur
 	gaus_hist_ = ConvolveInPlace(hist_, GetGaussianFunc(best_harmonic_>>4, 4));
@@ -299,27 +292,19 @@ void Page::LoadBlobs(vector<Blob>& blobs){
     vector<Blob>::iterator itr = blobs.begin();
     for (int iline = 0; iline < num_lines_; ++iline)
         lines_[iline].LoadBlobs(itr);
-    if (itr != blobs.end())
-        cout << "\nWIND IN THE SAILS\n";
+    assert(itr == blobs.end());
 }
 
 void Page::PrintHistograms(ostream& ost) {
 	unsigned int i, len;
 
-	ost << "\nHistogram        , ";
+	ost << "\nHistogram,GausHistogram,DeriGausHistogram, ";
 	len = hist_.size();
 	for (i = 0; i < len; i++)
-		ost << hist_[i] << ", ";
-
-	ost << "\nGausHistogram    , ";
-	len = gaus_hist_.size();
-	for (i = 0; i < len; i++)
-		ost << gaus_hist_[i] << ", ";
-
-	ost << "\nDeriGausHistogram, ";
-	len = d_gaus_hist_.size();
-	for (i = 0; i < len; i++)
-		ost << d_gaus_hist_[i] << ", ";
+		ost << endl
+			<< hist_[i] << ", "
+			<< gaus_hist_[i] << ", "
+			<< d_gaus_hist_[i];
 }
 
 void Page::PrintLinesInfo(ostream& ost) {
@@ -369,8 +354,16 @@ void Page::DisplayLinesImage() {
 }
 
 void Page::DisplayFromLines() {
+	PIX		*pix_debug  = pixConvert1To8(NULL, pix_400_, 255, 0);
+	PIXCMAP *cmap 		= pixcmapCreateRandom(8, 1, 1);
+	cmap->n = 254;			// Hack to suppress error to draw word boxes
+	pixSetColormap(pix_debug, cmap);
+	unsigned char index = 1;
 	for (int i = 0; i < num_lines_; ++i)
-		lines_[i].DisplayLetters();
+		lines_[i].PrintColorLetters(pix_debug, index);
+	pix_debug->colormap->n = 256;
+    pixDisplayWriteFormat(pix_debug, 1, IFF_PNG);
+    pixDestroy(&pix_debug);
 }
 
 void Page::DebugDisplay(ostream &ost, int debug){
@@ -382,14 +375,11 @@ void Page::DebugDisplay(ostream &ost, int debug){
         lines_[0].PrintSampleLetter(0);
     }
 
-    if (debug & (4|8|16)){
+    if (debug & 4){
         pixDisplayWrite(NULL, -1);
-        if (debug & 4)
-            DisplayMorphedImages();
-        if (debug & 8)
-            DisplayLinesImage();
-        if (debug & 16)
-            DisplayFromLines();
+        DisplayMorphedImages();
+        DisplayLinesImage();
+        DisplayFromLines();
         pixDisplayMultiple("/tmp/junk_write_display*");
     }
 }
@@ -397,4 +387,8 @@ void Page::DebugDisplay(ostream &ost, int debug){
 void Page::PrintBoxInfo(ostream& fout){
     for (int i=0; i < num_lines_; ++i)
         lines_[i].PrintBoxes(fout, pixGetHeight(pix_400_));
+}
+
+int Page::Height(){
+	return pixGetHeight(pix_400_);
 }

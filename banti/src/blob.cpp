@@ -6,8 +6,10 @@
  */
 #include "blob.h"
 #include "math_utils.h"
+#include "classifier.h"
+#include <iomanip>
 
-Blob::Blob() {
+Blob::Blob():best_matches_(NCLASSES) {
     box_ = NULL;
     pix_ = NULL;
     pix64_ = NULL;
@@ -29,13 +31,6 @@ void Blob::Init(PIX* pix, BOX* box, int col_id, int line_id, int word_id,
     pix64_ = pixScaleBinary(pix, 64.0 / pix->w, 64.0 / pix->h);
 }
 
-int Blob::FindBestMatch(){
-    vector<float> vec_sq_dists (sq_dist_to_means_, sq_dist_to_means_ + NCLASSES);
-    float min;
-    VecMin(vec_sq_dists, min, best_match_);
-    return best_match_;
-}
-
 Blob::~Blob() {
     if (pix_)
         pixDestroy(&pix_);
@@ -45,24 +40,24 @@ Blob::~Blob() {
         boxDestroy(&box_);
 }
 
-void PrintBlobsInfo(vector<Blob>& vb){
-#if BANTI_DEBUG_ARCHIVE
-    int n_blbs = vb.size();
-    for (int i=0; i<n_blbs; ++i){
-      cout << vb[i].line_id_ << " "
-              << vb[i].word_id_ << " "
-              << vb[i].box_->x << " "
-              << vb[i].box_->y << " "
-              << endl;
-    }
-#endif
+void Blob::PrintBestMatches(int n=1, bool print_dists=false){
+    for (int j=0; j<n; ++j){
+    	size_t best = best_matches_[j];
+		cout << "\t" << char_codes[best];
+
+		if(print_dists)
+		cout << "\t(" << setw(3) << 1+best << ") - "
+		   << std::setprecision(0) << setw(10)
+		   << sq_dist_to_means_[best_matches_[j]]
+		   << "\n";
+  }
 }
 
-void PrintBestMatch(vector<Blob>& vb){
-    int n_blbs = vb.size();
-    cout << endl;
-
-    for (int i=0; i<n_blbs; ++i){
-      cout << i+1 << " = " << 1+vb[i].FindBestMatch() << endl;
-    }
+void Blob::PrintBoxInfo(ostream& out, int ht){
+    out  << char_codes[best_matches_[0]] << " "
+		 << box_->x << " " << ht - (box_->y + box_->h - 1) << " "
+		 << box_->x + box_->w - 1 << " " << ht - box_->y << " "
+		 << base_at_ << endl;
 }
+
+

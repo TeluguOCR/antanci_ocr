@@ -27,7 +27,7 @@ class Line{
 
 	BOXA* CheckOverlapBoxes(BOXA* boxes);
 	bool inline ShouldMixBoxes(BOX* b1, BOX* b2);
-	void FindWordBoxes();
+	void FindWordBoxesByMorphing();
     void FindLetters();
 
 public:
@@ -38,9 +38,10 @@ public:
 	void ProcessLine();
 	void LoadBlobs(vector<Blob>::iterator& itr);
 
-	inline int GetNumWords()                { return num_words_;	}
+	inline int GetNumWords()                { return line_id_;	}
 	inline int GetNumLetters()              { return num_letters_;  }
-	void DisplayLetters();
+	void DisplayLettersLattice();
+	void PrintColorLetters(PIX* pix_debug, unsigned char& index);
 	void PrintSampleLetter(int letter);
 	void PrintBoxes(ostream& fout, int ht);
     //float DoImageInnerProduct64(int letter, float wts[64][64]);

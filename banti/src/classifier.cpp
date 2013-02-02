@@ -12,53 +12,54 @@
 #include <assert.h>
 #include <cmath>
 #include "classifier.h"
+#include "math_utils.h"
 
 using namespace std;
+
+vector<string> char_codes;
 
 Classifier::Classifier(string dir){
     string nfw = dir + "/data/wr.bin";
     string nfs = dir + "/data/sm.bin";
     string nfc = dir + "/data/cp.bin";
 
-    //for(int i=0; i<NFEATS; ++i) for (int j=0; j<NFEATS; ++j) wr[j][i]=0.7071;
     ifstream fw;
     fw.open(nfw.c_str());
-    fw.read((char*)neg_sqroot_cov, NFEATS*NFEATS*BYTES_PER_WORD);
-    fw.close();
+    if(!fw)
+    	cerr << "\nClassifer could not open " << nfw;
+	else{
+		fw.read((char*)neg_sqroot_cov, NFEATS*NFEATS*BYTES_PER_WORD);
+		fw.close();
+	}
 
-    //for(int i=0; i<NCLASSES; ++i) for (int j=0; j<NFEATS; ++j) sm[j][i]=2.7182818;
     ifstream fs;
     fs.open(nfs.c_str());
-    fs.read((char*)sphered_means, NCLASSES*NFEATS*BYTES_PER_WORD);
-    fs.close();
+    if(!fs)
+    	cerr << "\nClassifer could not open " << nfs;
+    else{
+    	fs.read((char*)sphered_means, NCLASSES*NFEATS*BYTES_PER_WORD);
+    	fs.close();
+    }
 
-    //for(int i=0; i<NFEATS; ++i) for (int j=0; j<STD_SZ; ++j) for(int k=0; k<STD_SZ; ++k) cp[k][j][i]=3.14159265;
     ifstream fc;
     fc.open(nfc.c_str());
-    fc.read((char*)canonical_pics, NFEATS*STD_SZ*STD_SZ*BYTES_PER_WORD);
-    fc.close();
+    if(!fc)
+    	cerr << "\nClassifer could not open " << nfc;
+    else{
+		fc.read((char*)canonical_pics, NFEATS*STD_SZ*STD_SZ*BYTES_PER_WORD);
+		fc.close();
+    }
 
-#if BANTI_DEBUG_ARCHIVE
-    cout << "\nWRoot";
-    for(int i=0; i<NFEATS; i += NFEATS>>1) {
-        cout << endl;
-        for(int j=0; j<NFEATS; j += NFEATS>>1)
-            cout<< "\n\t(" << i << "," << j << ")\t" << neg_sqroot_cov[j][i];
+    string name_char_class_file = dir +"/data/charcodes.txt", s;
+    ifstream f_chars;
+    f_chars.open(name_char_class_file.c_str());
+    if(!f_chars)
+    	cerr << "\nClassifer could not open " << name_char_class_file;
+    else{
+		while (f_chars >> s)
+			char_codes.push_back(s);
+		f_chars.close();
     }
-    cout << "\nSpMeans";
-    for(int i=0; i<NCLASSES; i += NCLASSES>>1) {
-        cout << endl;
-        for(int j=0; j<NFEATS; j += NFEATS>>1)
-            cout<< "\n\t(" << j << "," << i << ")\t" << sphered_means[i][j];
-    }
-    for(int i=0; i<NFEATS; i += NFEATS>>1) {
-        cout << "\nCV PIC : " << i ;
-        for(int j=0; j<STD_SZ; j += 21){
-            for (int k=0; k<STD_SZ; k += 21)
-                cout<< "\n\t(" << j << "," << k << ")\t" << canonical_pics[k][j][i];
-        }
-    }
-#endif
 }
 
 Classifier::~Classifier() {
@@ -69,7 +70,7 @@ inline float Classifier::GetIthFeature(PIX* p, int iFeat){
     /* IMPORTANT
      * In Matlab a black is 1 & white is 0 so there is an negation in the
      * if statement below.
-     * Simlarly Matlab stores its matrices in binary files by altering
+     * Also Matlab stores its matrices in binary files by altering
      * the last column least. ie. It stores A(:,:,1) followed by A(:,:,2) etc.
      * So Indices are reversed and iFeat becomes last index as opposed to first!
      */
@@ -102,6 +103,9 @@ void Classifier::PopulateFeatures(Blob& blob){
         for (int j=0; j<NFEATS; ++j)
             blob.sq_dist_to_means_[i] += pow(blob.rot_feats_[j] - sphered_means[i][j], 2);
     }
+
+    // Sort
+    IncOrder(blob.sq_dist_to_means_, blob.best_matches_);
 }
 
 void Classifier::PopulateFeatures(vector<Blob>& blobs){

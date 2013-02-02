@@ -7,6 +7,7 @@
 
 #include "line.h"
 #include <iostream>
+#include <cmath>
 using namespace std;
 
 Line::Line(){
@@ -41,7 +42,7 @@ void Line::Init(int top, int bottom, int base_line, PIX* mother,
     letter_ht_ = letter_ht;
 }
 
-void Line::FindWordBoxes(){
+void Line::FindWordBoxesByMorphing(){
     pix_words_ = pixCloseBrick(NULL, pix_line_, letter_ht_>>1, letter_ht_>>1);
     BOXA* tmp_boxa1 = pixConnCompBB(pix_words_, 4);
     BOXA* tmp_boxa2 = boxaSelectBySize(tmp_boxa1, letter_ht_>>2, letter_ht_>>2,
@@ -66,7 +67,7 @@ void Line::FindLetters(){
     pixa_letters_tmp2 = pixaSelectBySize(pixa_letters_tmp1,
                                         letter_ht_>>2, letter_ht_>>2,
                                         L_SELECT_IF_BOTH, L_SELECT_IF_GTE, NULL);
-    pixa_letters_ = pixaSort  (pixa_letters_tmp2, L_SORT_BY_X, L_SORT_INCREASING,
+    pixa_letters_ = pixaSort(pixa_letters_tmp2, L_SORT_BY_X, L_SORT_INCREASING,
                                                                 NULL, L_CLONE);
     boxaDestroy(&letter_boxes);
     pixaDestroy(&pixa_letters_tmp1);
@@ -86,7 +87,7 @@ void Line::LoadBlobs(vector<Blob>::iterator& itr){
         for (int iw=0; iw < num_words_; ++iw){
             BOX* wbox = boxaGetBox(word_boxes_, iw, L_CLONE);
             boxGetCenter(wbox, &centerx_word, &dummy);
-            int dist = abs(centerx_word - centerx_box);
+            int dist = fabs(centerx_word - centerx_box);
             if (dist < mindist){
                 mindist = dist;
                 word_id = iw;
@@ -103,7 +104,7 @@ void Line::LoadBlobs(vector<Blob>::iterator& itr){
 }
 
 void Line::ProcessLine(){
-    FindWordBoxes();
+    FindWordBoxesByMorphing();
     FindLetters();
 }
 
@@ -156,29 +157,45 @@ inline bool Line::ShouldMixBoxes(BOX* b1, BOX* b2){
     return (r1 >= l2) && (r2 >= l1);
 }
 
-void Line::DisplayLetters(){
-    PIX* pix_debug;
-#if 0
-    pix_debug = pixCopy(NULL, pix_line_);
+void Line::DisplayLettersLattice(){
+    int wt, ht, max_wt = -1, max_ht = -1;
+    // Find max character sizes before display
+    for (int index = 0; index < num_letters_; index++) {
+		pixaGetPixDimensions(pixa_letters_, index, &wt, &ht, NULL);
+		if (wt > max_wt)	max_wt = wt;
+		if (ht > max_ht)    max_ht = ht;
+    }
+	pixaDisplayOnLattice(pixa_letters_, max_wt, max_ht);
+}
+
+void Line::PrintColorLetters(PIX* pix_debug, unsigned char& index){
+    int n = pixaGetCount(pixa_letters_);
+    int xb, yb, wb, hb;
+    for (int i = 0; i < n; i++) {
+        index = 1 + (index % 254);
+        pixaGetBoxGeometry(pixa_letters_, i, &xb, &yb, &wb, &hb);
+        PIX* pixs = pixaGetPix(pixa_letters_, i, L_CLONE);
+        PIX* pixt = pixConvert1To8(NULL, pixs, 0, index);
+        pixRasterop(pix_debug, xb, yb, wb, hb, PIX_PAINT, pixt, 0, 0);
+        pixDestroy(&pixs);
+        pixDestroy(&pixt);
+    }
+
+    // Display Word Boxes
     BOX* ibox;
-    /* Draw outline of each c.c. box_line_ */
     for (int i = 0; i < num_words_; i++) {
         ibox = boxaGetBox(word_boxes_, i, L_CLONE);
-        pixRenderBox(pix_debug, ibox, 1, L_FLIP_PIXELS);
+        ibox->y += top_;
+        pixRenderBoxArb(pix_debug, ibox, 1, 0,0,0);
         boxDestroy(&ibox);
     }
-#else
-    pix_debug = pixaDisplayOnLattice(pixa_letters_, 65, 65);
-#endif
-    pixDisplayWriteFormat(pix_debug, 1, IFF_PNG);
-    pixDestroy(&pix_debug);
 }
 
 void Line::PrintSampleLetter(int letter){
     PIX *pix = pixaGetPix(pixa_letters_, letter, L_CLONE);
-    for (int row = 0; row < pix->h; ++row){
+    for (l_uint32 row = 0; row < pix->h; ++row){
         cout << endl;
-        for (int word = 0; word < pix->wpl; ++word)
+        for (l_uint32 word = 0; word < pix->wpl; ++word)
             for (int ibit=8*sizeof(l_uint32)-1; ibit >= 0 ; --ibit)
                 if (pix->data[row*pix->wpl+word] & (1<<ibit))
                     cout << '#';

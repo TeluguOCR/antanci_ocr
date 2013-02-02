@@ -11,7 +11,7 @@ protected:
 
     int x_res_, y_res_;
     int w400_, h400_;
-    int best_harmonic_;
+    int best_harmonic_, best_harmonic_amp_;
     int num_cols_;							// TODO: Abstract Columns
     int num_lines_;
 
@@ -61,6 +61,7 @@ public:
     void DisplayLinesImage();
     void DisplayFromLines();
     void PrintBoxInfo(ostream& fout);
+    int Height();
 };
 
 #endif // BANTI_PAGE_H

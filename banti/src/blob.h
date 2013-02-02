@@ -30,10 +30,8 @@ class Blob{
     float rot_feats_[NFEATS];
     float sq_dist_to_means_[NCLASSES];
 
-    int best_match_;
+    vector<size_t> best_matches_;
 
-    friend void PrintBlobsInfo(vector<Blob>& vb);
-    friend void PrintBestMatch(vector<Blob>& vb);
     friend class Classifier;
 public:
     Blob();
@@ -42,6 +40,8 @@ public:
                 int col_id, int line_id, int word_id,
                 int base_at, int letter_ht);
     int FindBestMatch();
+    void PrintBestMatches(int n, bool print_dists);
+    void PrintBoxInfo(ostream& out, int ht);
 };
 
 #endif /* LETTER_H_ */

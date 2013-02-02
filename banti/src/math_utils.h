@@ -70,7 +70,8 @@ T VecMeanDiff(const vector<T>& f, const vector<T>& g){
 }
 
 template<typename T>
-T VecMedian(const vector<T> h){
+T VecMedian(const vector<T> hin){
+	vector<T> h = hin;
 	sort(h.begin(), h.end());
 	int len = h.size();
 	int mid = len>>1;
@@ -87,6 +88,14 @@ T VecMedianDiff(const vector<T>& f, const vector<T>& g){
 	sort(h.begin(), h.end());
 	int mid = len>>1;
 	return (len%2)?h[mid]:(h[mid]+h[mid-1])/2;
+}
+
+template <typename T>
+void IncOrder(T const& values, vector<size_t>& indices) {
+    iota(begin(indices), end(indices), static_cast<size_t>(0));
+    sort(begin(indices), end(indices),
+        [&](size_t a, size_t b) { return values[a] < values[b]; }
+    );
 }
 
 #endif	// BANTI_MATH_UTILS_H
