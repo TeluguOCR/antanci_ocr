@@ -8,6 +8,7 @@
 #include "line.h"
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 using namespace std;
 
 Line::Line(){
@@ -43,33 +44,108 @@ void Line::Init(int top, int bottom, int base_line, PIX* mother,
 }
 
 void Line::FindWordBoxesByMorphing(){
-    pix_words_ = pixCloseBrick(NULL, pix_line_, letter_ht_>>1, letter_ht_>>1);
-    BOXA* tmp_boxa1 = pixConnCompBB(pix_words_, 4);
-    BOXA* tmp_boxa2 = boxaSelectBySize(tmp_boxa1, letter_ht_>>2, letter_ht_>>2,
+	pix_words_ = pixDilateBrick(NULL, pix_line_, 1, (letter_ht_>>1)+2);
+    pixCloseBrick(pix_words_, pix_words_, letter_ht_ * .6, 1);
+    BOXA* tmp_boxa1 = pixConnCompBB(pix_words_, training_mode ? 4 : 8);
+    BOXA* tmp_boxa2 = NULL;
+    if (training_mode)
+    	tmp_boxa2 = boxaCopy(tmp_boxa1, L_CLONE);
+    else
+    	tmp_boxa2 = boxaSelectBySize(tmp_boxa1, letter_ht_>>2, letter_ht_>>2,
                                 L_SELECT_IF_BOTH, L_SELECT_IF_GTE, NULL);
     BOXA* tmp_boxa3 = boxaSort(tmp_boxa2, L_SORT_BY_X, L_SORT_INCREASING, NULL);
+
+    word_boxes_ = boxaCopy(tmp_boxa3, L_CLONE);
+    num_words_ = boxaGetCount(word_boxes_);
     boxaDestroy(&tmp_boxa1);
     boxaDestroy(&tmp_boxa2);
-    if (0){
-        word_boxes_ = CheckOverlapBoxes(tmp_boxa3);
-        boxaDestroy(&tmp_boxa3);
-    }else
-        word_boxes_ = tmp_boxa3;
-    num_words_ = boxaGetCount(word_boxes_);
+    boxaDestroy(&tmp_boxa3);
+}
+
+void Line::MergeContainedBoxes(PIXA* pixes){
+	l_int32 container, containee = 1, contained;
+	while(containee < pixes->n){
+		BOX* neebox = pixaGetBox(pixes, containee, L_COPY);
+		container = containee - 1;
+		while(container >= 0){
+			bool to_be_merged = false;
+			BOX* nerbox = pixaGetBox(pixes, container, L_COPY);
+			boxContains(nerbox, neebox, &contained);
+			if (contained == 1){
+				float relative_size = (float)(nerbox->w * nerbox->h)/(neebox->w * neebox->h);
+				float area_fraction;
+				PIX* p = pixaGetPix(pixes, containee, L_CLONE);
+				pixFindAreaFraction(p, NULL, &area_fraction);
+				pixDestroy(&p);
+				if ((area_fraction < .0) && (area_fraction > .0)){
+					cout << "Line_id " << line_id_ << " "
+						 << container << " contains " << containee
+						 << " relative_size " << relative_size
+						 << " area_fraction " << area_fraction << endl ;
+					PrintSampleLetter(container);
+				}
+				to_be_merged = (relative_size >= 15) || (area_fraction >= .625);
+			}
+			if (to_be_merged){
+				PIX* nerpix = pixaGetPix(pixes, container, L_CLONE);
+				PIX* neepix = pixaGetPix(pixes, containee, L_CLONE);
+				PIX* newpix = pixAddBorderGeneral(neepix,
+						neebox->x - nerbox->x, nerbox->x+nerbox->w - neebox->x -neebox->w,
+						neebox->y - nerbox->y, nerbox->y+nerbox->h - neebox->y -neebox->h, 0);
+				pixOr(nerpix, nerpix, newpix);
+				pixDestroy(&nerpix);
+				pixDestroy(&neepix);
+				pixDestroy(&newpix);
+				pixaRemovePix(pixes, containee);
+				containee--;	// Because a pix has been removed, we need to step back
+				break;
+			}
+			else
+				container--;
+			boxDestroy(&nerbox);
+		}
+		boxDestroy(&neebox);
+		containee++;
+	}
+}
+
+PIXA* SortGlyphsInAkshara(PIXA* pixes){
+	BOXA* boxes = pixaGetBoxa(pixes, L_CLONE);
+	vector<l_int32> idx(boxes->n);
+	iota(begin(idx), end(idx), static_cast<l_int32>(0));
+	sort(idx.begin(), idx.end(), [&boxes](l_int32 i, l_int32 j){
+			l_int32 il, it, iw, ih, jl, jw, jt, jh, ir, jr;
+			boxaGetBoxGeometry(boxes, i, &il, &it, &iw, &ih); ir = il + iw;
+			boxaGetBoxGeometry(boxes, j, &jl, &jt, &jw, &jh); jr = jl + jw;
+			l_int32 ol = ((ir >= jl) && (jr >= il)) * min(ir - jl, jr - il);
+			l_int32 ol_percent = 100 * ol / min(iw, jw);
+			if (ol_percent < 50)
+				return il < jl;
+			else
+				return it + ih/2 < jt + jh/2;
+			});
+	NUMA* naindex = numaCreateFromIArray(&idx[0], boxes->n);
+	PIXA* pixa_result = pixaSortByIndex(pixes, naindex, L_CLONE);
+	boxaDestroy(&boxes);
+	pixaDestroy(&pixes);
+	return pixa_result;
 }
 
 void Line::FindLetters(){
     PIXA *pixa_letters_tmp1, *pixa_letters_tmp2;
-    BOXA* letter_boxes = pixConnComp(pix_line_, &pixa_letters_tmp1, 8);
+    pixConnComp(pix_line_, &pixa_letters_tmp1, training_mode ? 4 : 8);
 
-    // Filter the letters_ and combine boxes if necessary
-    // TODO: Combine smaller dots into bigger boxes
-    pixa_letters_tmp2 = pixaSelectBySize(pixa_letters_tmp1,
+    if (training_mode)
+    	pixa_letters_tmp2 = pixaCopy(pixa_letters_tmp1, L_CLONE);
+    else
+    	pixa_letters_tmp2 = pixaSelectBySize(pixa_letters_tmp1,
                                         letter_ht_>>2, letter_ht_>>2,
                                         L_SELECT_IF_BOTH, L_SELECT_IF_GTE, NULL);
     pixa_letters_ = pixaSort(pixa_letters_tmp2, L_SORT_BY_X, L_SORT_INCREASING,
                                                                 NULL, L_CLONE);
-    boxaDestroy(&letter_boxes);
+    if (training_mode)
+    	MergeContainedBoxes(pixa_letters_);
+    pixa_letters_ = SortGlyphsInAkshara(pixa_letters_);
     pixaDestroy(&pixa_letters_tmp1);
     pixaDestroy(&pixa_letters_tmp2);
 
@@ -81,17 +157,14 @@ void Line::LoadBlobs(vector<Blob>::iterator& itr){
     for (int i = 0; i < num_letters_; i++) {
         // Which word do we belong
         BOX* box = pixaGetBox(pixa_letters_, i, L_CLONE);
-        int word_id = 0, mindist = pixGetWidth(pix_line_);
-        float centerx_box, dummy, centerx_word;
-        boxGetCenter(box, &centerx_box, &dummy);
+        int word_id = -1, yes;
+        float cx, cy;
+        boxGetCenter(box, &cx, &cy);
         for (int iw=0; iw < num_words_; ++iw){
             BOX* wbox = boxaGetBox(word_boxes_, iw, L_CLONE);
-            boxGetCenter(wbox, &centerx_word, &dummy);
-            int dist = fabs(centerx_word - centerx_box);
-            if (dist < mindist){
-                mindist = dist;
-                word_id = iw;
-            }
+            boxContainsPt(wbox, cx, cy, &yes);
+            if (yes)
+            	word_id = iw;
             boxDestroy(&wbox);
         }
 

@@ -25,8 +25,9 @@ protected:
     PIX *pix_lines_;
     PIX *pix_columns_;
 
-    vector<double> hist_;
-    vector<double> gaus_hist_, d_gaus_hist_, dd_gaus_hist_;
+    vector<double> hist_, morph_hist_;
+    vector<double> gaus_hist_, gaus_morph_hist_;
+    vector<double> d_gaus_hist_, d_gaus_morph_hist_;
     vector<int> base_lines_;
     vector<int> top_lines_;
     vector<int> line_seps_;

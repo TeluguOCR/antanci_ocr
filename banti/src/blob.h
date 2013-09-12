@@ -13,9 +13,11 @@
 #include "config_banti.h"
 
 using namespace std;
+extern bool training_mode;
 
 class Blob{
-    int   column_id_;
+public:
+	int   column_id_;
     int   line_id_;
     int   word_id_;
     int   base_at_;
@@ -29,19 +31,15 @@ class Blob{
     float features_[NFEATS];
     float rot_feats_[NFEATS];
     float sq_dist_to_means_[NCLASSES];
-
     vector<size_t> best_matches_;
 
-    friend class Classifier;
-public:
     Blob();
     ~Blob();
     void Init(  PIX* pix, BOX* box,
                 int col_id, int line_id, int word_id,
                 int base_at, int letter_ht);
-    int FindBestMatch();
-    void PrintBestMatches(int n, bool print_dists);
     void PrintBoxInfo(ostream& out, int ht);
+    string PackSix();
 };
 
 #endif /* LETTER_H_ */

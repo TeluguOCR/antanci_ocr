@@ -7,7 +7,6 @@
 #include "blob.h"
 #include "math_utils.h"
 #include "classifier.h"
-#include <iomanip>
 
 Blob::Blob():best_matches_(NCLASSES) {
     box_ = NULL;
@@ -40,24 +39,43 @@ Blob::~Blob() {
         boxDestroy(&box_);
 }
 
-void Blob::PrintBestMatches(int n=1, bool print_dists=false){
-    for (int j=0; j<n; ++j){
-    	size_t best = best_matches_[j];
-		cout << "\t" << char_codes[best];
+string Blob::PackSix(){
+	// Packs the blob into an Ascii string where each character holds six pixels
+	// of the blob. The characters used are in the range [0,o] = [0x30, 0x70)
+    int ht = pix_->h;
+    int wd = pix_->w;
+    int wpl = pix_->wpl;
+    string s(1+int((1+ht*wd)/6), '0');
 
-		if(print_dists)
-		cout << "\t(" << setw(3) << 1+best << ") - "
-		   << std::setprecision(0) << setw(10)
-		   << sq_dist_to_means_[best_matches_[j]]
-		   << "\n";
-  }
+    for(int ip = 0; ip < ht*wd; ++ip){
+    	int row = int(ip/wd);
+    	int col = ip % wd;
+    	int word = int(col/WORD_SZ);
+    	int rbit = WORD_SZ - 1 - col % WORD_SZ;
+    	bool val = pix_->data[row*wpl + word] & (1<<rbit);
+
+    	int is = int(ip/6);
+    	s[is] += val << (5 - (ip%6));
+    }
+    return s;
 }
 
 void Blob::PrintBoxInfo(ostream& out, int ht){
-    out  << char_codes[best_matches_[0]] << " "
-		 << box_->x << " " << ht - (box_->y + box_->h - 1) << " "
-		 << box_->x + box_->w - 1 << " " << ht - box_->y << " "
-		 << base_at_ << endl;
+	if (training_mode){
+	    out
+	    	<< '?' << " "
+			<< box_->x << " " << box_->y << " "
+			<< box_->w << " " <<  box_->h << " "
+			<< base_at_ << " " << base_at_ - letter_ht_ << " "
+	    	<< line_id_ << " "  << word_id_ << " "
+	    	<< PackSix()
+	    	;
+	}else{
+    out
+    	<< char_codes[best_matches_[0]] << " "
+		<< box_->x << " " << abs(ht - (box_->y + box_->h - 1)) << " "
+		<< box_->x + box_->w - 1 << " " << abs(ht - box_->y) << " "
+		;
+	}
+    out << endl;
 }
-
-

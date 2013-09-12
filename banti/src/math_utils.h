@@ -9,6 +9,8 @@ vector<double> GetGaussianFunc(int sig, int nsigmas);
 vector<double> ConvolveInPlace(const vector<double>& f, vector<double> c);
 void DifferentiateInPlace(const vector<double>& f,
 							    vector<double>& df, vector<double>& ddf);
+void DifferentiateInPlace(const vector<double>& f,
+							    vector<double>& df);
 vector<double> MagFFT(const vector<double>& f);
 
 template<typename T>

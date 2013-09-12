@@ -29,6 +29,7 @@ class Line{
 	bool inline ShouldMixBoxes(BOX* b1, BOX* b2);
 	void FindWordBoxesByMorphing();
     void FindLetters();
+    void MergeContainedBoxes(PIXA* pixes);
 
 public:
 	Line();
@@ -38,7 +39,7 @@ public:
 	void ProcessLine();
 	void LoadBlobs(vector<Blob>::iterator& itr);
 
-	inline int GetNumWords()                { return line_id_;	}
+	inline int GetNumWords()                { return num_words_;	}
 	inline int GetNumLetters()              { return num_letters_;  }
 	void DisplayLettersLattice();
 	void PrintColorLetters(PIX* pix_debug, unsigned char& index);

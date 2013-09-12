@@ -29,35 +29,43 @@ vector<double> ConvolveInPlace(const vector<double>& f, vector<double> c){
 }
 
 void DifferentiateInPlace(const vector<double>& f,
-								vector<double>& df, vector<double>& ddf){
+								vector<double>& df){
 
 	vector<double> differ;
 	differ.push_back(1);
 	differ.push_back(0);
 	differ.push_back(-1);
-	vector<double> difdiffer;
-	difdiffer.push_back(.5);
-	difdiffer.push_back(-1);
-	difdiffer.push_back(.5);
 
 	df  = ConvolveInPlace(f, differ);
-	ddf = ConvolveInPlace(f, difdiffer);
 	int n = f.size();
-	vector<int> mdf(n, 0);
+	vector<int> is_zero_crossing(n, 0);
 
-	for (int i = 1; i < n-1; ++i){
+	// Detect Zero Crossing
+	for (int i = 1; i < n-1; ++i)
 	    if ((df[i-1] > 0.0) != (df[i+1] > 0.0))
-	        mdf[i] = 1;
-	}
+	        is_zero_crossing[i] = 1;
 
+	// At Zero Crossing force nearest value to zero
 	for (int i = 1; i < n-1; ++i){
-	    if (mdf[i] && mdf[i+1]){
+	    if (is_zero_crossing[i] && is_zero_crossing[i+1]){
 	        if (fabs(df[i]) < fabs(df[i+1]))
 	            df[i] = 0;
 	        else
 	            df[i+1] = 0;
 	    }
 	}
+}
+
+void DifferentiateInPlace(const vector<double>& f,
+								vector<double>& df, vector<double>& ddf){
+
+	vector<double> difdiffer;
+	difdiffer.push_back(.5);
+	difdiffer.push_back(-1);
+	difdiffer.push_back(.5);
+
+	ddf = ConvolveInPlace(f, difdiffer);
+	DifferentiateInPlace(f, df);
 }
 
 using namespace GFFT;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <assert.h>
+#include <ctime>
 #include "page.h"
 #include "math_utils.h"
 
@@ -31,6 +32,23 @@ int Page::OpenImage(string name) {
 	cout << "\n\tWidth: " << width << " Height: " << height << " Depth: "
 		 << depth << " X Res: " << x_res_ << " Y Res: " << y_res_;
 
+  if (training_mode){
+	  bool random_rotate = true;
+	  if (random_rotate){
+		  unsigned rand_from_name = 0;
+		  for(unsigned i=0; i < name.length(); ++i)
+			  rand_from_name += (unsigned)name[i];
+		  srand((unsigned)time(0) + rand_from_name);
+		  const float RNG = .2;
+		  float ang = (float)rand()/((float)RAND_MAX/(2*RNG)) - RNG;
+		  pix_400_  = pixRotate(pix_orig_, 3.1415926535 / 180. * ang,
+				  L_ROTATE_AREA_MAP, L_BRING_IN_WHITE, 0, 0);
+		  cout << "\n\tRotating by: " << ang;
+	  }
+	  else
+		  pix_400_ = pixClone(pix_orig_);
+  }
+  else{
 	Deskew();
     if (x_res_ > 400) // 400 < resol
     {
@@ -56,13 +74,16 @@ int Page::OpenImage(string name) {
         pixDestroy(&pix_orig_);
         return -1;
     }
+  }
 
 	h400_ = pixGetHeight(pix_400_);
 	w400_ = pixGetWidth(pix_400_);
 	hist_.reserve(h400_);
+	morph_hist_.reserve(h400_);
 	gaus_hist_.reserve(h400_);
+	gaus_morph_hist_.reserve(h400_);
 	d_gaus_hist_.reserve(h400_);
-	dd_gaus_hist_.reserve(h400_);
+	d_gaus_morph_hist_.reserve(h400_);
 
 	return 0;
 }
@@ -126,7 +147,6 @@ void Page::Deskew() {
 }
 
 void Page::MorphToWords() {
-    // TODO: Clean up
     BOXA* letter_boxes = pixConnComp(pix_400_, NULL, 8);
     vector<int> wds, hts;
     for(int i=0; i < letter_boxes->n; ++i){
@@ -143,6 +163,14 @@ void Page::MorphToWords() {
 	pix_words_ = pixCloseBrick(NULL, pix_400_,
                                 median_wd,
                                 median_ht);
+
+	// Find Histogram from Morphed Image (to be used for topline detection)
+	Numa* counts = pixCountPixelsByRow(pix_words_, NULL);
+	int length = numaGetCount(counts);
+	morph_hist_.assign(counts->array, counts->array + length);
+	numaDestroy(&counts);
+	gaus_morph_hist_ = ConvolveInPlace(morph_hist_, GetGaussianFunc(median_ht>>3, 3));
+	DifferentiateInPlace(gaus_morph_hist_, d_gaus_morph_hist_);
 }
 
 void Page::MorphToLines() {
@@ -157,8 +185,8 @@ void Page::MorphToColumns() {
 }
 
 void Page::MorphAll() {
-	MorphToColumns();
-	MorphToLines();
+	//MorphToColumns();
+	//MorphToLines();
 	MorphToWords();
 }
 
@@ -180,11 +208,17 @@ void Page::CalcHist() {
 		mean_subs.push_back(hist_[i] - sum);
 
 	vector<double> magfft = MagFFT(mean_subs);
-	int max_at, next_2_power = magfft.size();
+	int max_at, next_2_power = magfft.size(), i = 1;
 	double max_val;
-	VecMax<double> (magfft.begin() + 1, magfft.begin() + (next_2_power / 2),
+	VecMax<double> (magfft.begin() + i, magfft.begin() + (next_2_power / 2),
 			max_val, max_at);
-	best_harmonic_ = (int) (next_2_power / (max_at + 1));
+	while (max_at == 0){
+		cout << "\nCould not detect harmonic.. trying again";
+		VecMax<double> (magfft.begin() + (++i), magfft.begin() + (next_2_power / 2),
+				max_val, max_at);
+	}
+
+	best_harmonic_ = (int) (next_2_power / (max_at + i));
 	best_harmonic_amp_ = (int) max_val;
 	cout << "\n\tBest Harmonic : " << best_harmonic_ << "\tMax At : " << max_at
 		 << "\tPow of 2 : " << next_2_power
@@ -192,7 +226,7 @@ void Page::CalcHist() {
 
 	// Do a Gaussian blur
 	gaus_hist_ = ConvolveInPlace(hist_, GetGaussianFunc(best_harmonic_>>4, 4));
-	DifferentiateInPlace(gaus_hist_, d_gaus_hist_, dd_gaus_hist_);
+	DifferentiateInPlace(gaus_hist_, d_gaus_hist_);
 }
 
 void Page::FindBaseLines() {
@@ -202,8 +236,9 @@ void Page::FindBaseLines() {
 	bool inpeak = FALSE;
 	int min_dist_in_peak = best_harmonic_ / 2;
 
-	int len = d_gaus_hist_.size();
-	VecMax<double> (d_gaus_hist_, gmaxval, maxloc);
+	vector<double>& hist = d_gaus_hist_;	// May or may not use morph
+	int len = hist.size();
+	VecMax(hist, gmaxval, maxloc);
 
 	// Use this to begin locating a new peak
 	float peakthresh = gmaxval * PEAK_THRESHOLD_RATIO;
@@ -212,19 +247,19 @@ void Page::FindBaseLines() {
 
 	for (int i = 0; i < len; i++) {
 		if (inpeak == FALSE) {
-			if (d_gaus_hist_[i] > peakthresh) { // transition to in-peak
+			if (hist[i] > peakthresh) { // transition to in-peak
 				inpeak = TRUE;
-				maxval = d_gaus_hist_[i];
+				maxval = hist[i];
 				maxloc = i;
                 mintosearch = i + min_dist_in_peak;
                 // accept no zeros between i and i+mintosearch
 			}
 		} else { // inpeak == TRUE; look for max
-			if (d_gaus_hist_[i] > maxval) {
-				maxval = d_gaus_hist_[i];
+			if (hist[i] > maxval) {
+				maxval = hist[i];
 				maxloc = i;
 				mintosearch = i + min_dist_in_peak;
-			} else if (i > mintosearch && d_gaus_hist_[i] <= zerothresh) {
+			} else if (i > mintosearch && hist[i] <= zerothresh) {
 			    // leave peak and save the last baseline found
 				inpeak = FALSE;
 				base_lines_.push_back(maxloc);
@@ -250,8 +285,8 @@ void Page::SeperateLines() {
 
 	for (int i = 0; i < num_lines_; ++i) {
 		// Find top_ of line
-		from = d_gaus_hist_.begin() + last_found_sep + 1;
-		to = d_gaus_hist_.begin() + base_lines_[i];
+		from = d_gaus_morph_hist_.begin() + last_found_sep + 1;
+		to = d_gaus_morph_hist_.begin() + base_lines_[i];
 		VecMin<double> (from, to, dummy_val, top_at);
 		top_lines_.push_back(last_found_sep + 1 + top_at);
 
@@ -302,14 +337,14 @@ void Page::PrintHistograms(ostream& ost) {
 	len = hist_.size();
 	for (i = 0; i < len; i++)
 		ost << endl
-			<< hist_[i] << ", "
-			<< gaus_hist_[i] << ", "
-			<< d_gaus_hist_[i];
+			<< morph_hist_[i] << ", "
+			<< gaus_morph_hist_[i] << ", "
+			<< d_gaus_morph_hist_[i];
 }
 
 void Page::PrintLinesInfo(ostream& ost) {
 	int i;
-
+ if (!training_mode){
 	ost << "\nToplines      , ";
 	for (i = 0; i < num_lines_; i++)
 		ost << top_lines_[i] << "(" << base_lines_[i] - top_lines_[i] << "), ";
@@ -322,7 +357,7 @@ void Page::PrintLinesInfo(ostream& ost) {
 	ost << "\nLineSeperations, ";
 	for (i = 0; i < num_lines_; i++)
 		ost << line_seps_[i] << ", ";
-
+ }
 	ost << "\nWords_in_Line  , ";
 	for (i = 0; i < num_lines_; i++)
 		ost << lines_[i].GetNumWords() << ", ";
@@ -372,7 +407,8 @@ void Page::DebugDisplay(ostream &ost, int debug){
 
     if (debug & 2){
         PrintLinesInfo(ost);
-        lines_[0].PrintSampleLetter(0);
+        if (!training_mode)
+        	lines_[0].PrintSampleLetter(0);
     }
 
     if (debug & 4){
