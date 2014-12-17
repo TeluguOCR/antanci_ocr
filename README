@@ -47,4 +47,6 @@ How to build banti from scratch.
 	Increase stack size if you are getting a Seg Fault. 
 		ulimit -s 1000000
 
+11) If you want to run classifier you will need to have the data (charcodes.txt, cp.bin, sm.bin, wr.bin) in the data directory (symbolically) located in the same folder as the executable. 
+
 
