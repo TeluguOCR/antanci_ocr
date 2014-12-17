@@ -38,7 +38,7 @@ public:
     void Init(  PIX* pix, BOX* box,
                 int col_id, int line_id, int word_id,
                 int base_at, int letter_ht);
-    void PrintBoxInfo(ostream& out, int ht);
+    void PrintBoxInfo(ostream& out, int ht, bool tesseract_style);
     string PackSix();
 };
 

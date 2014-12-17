@@ -14,6 +14,9 @@
 using namespace std;
 
 class Line{
+	bool training_mode_;
+	int connection4or8_;
+
     int line_id_, col_id_;
 	BOX* box_line_;
 	PIX* pix_line_;
@@ -34,7 +37,7 @@ class Line{
 public:
 	Line();
     ~Line();
-	void Init(int top, int bot, int base_line, PIX* mother, int line_id, int col_id, int letter_ht);
+	void Init(int top, int bot, int base_line, PIX* mother, int line_id, int col_id, int letter_ht, bool training_mode_, int connection4or8_);
 
 	void ProcessLine();
 	void LoadBlobs(vector<Blob>::iterator& itr);

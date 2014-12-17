@@ -8,6 +8,8 @@ using namespace std;
 class Page{
 protected:
     string img_file_name_;
+    bool training_mode_;
+    int connection4or8_;
 
     int x_res_, y_res_;
     int w400_, h400_;
@@ -41,7 +43,7 @@ protected:
     void inline IncreaseResTo(PIX* pix_src, PIX** ppix_target, int targ_res);
 
 public:
-    Page();
+    Page(bool training_mode = false, int connection4or8 = 4);
     ~Page();
 
     int OpenImage(string name);

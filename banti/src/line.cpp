@@ -12,6 +12,8 @@
 using namespace std;
 
 Line::Line(){
+	training_mode_ = false;
+	connection4or8_ = 4;
     box_line_ = NULL;
     word_boxes_ = NULL;
     pix_line_ = pix_words_ = NULL;
@@ -32,7 +34,8 @@ Line::~Line(){
 }
 
 void Line::Init(int top, int bottom, int base_line, PIX* mother,
-                int line_id, int col_id, int letter_ht){
+                int line_id, int col_id, int letter_ht,
+                bool training_mode, int connection4or8){
     top_ = top;
     bottom_ = bottom;
     base_line_ = base_line;
@@ -41,17 +44,19 @@ void Line::Init(int top, int bottom, int base_line, PIX* mother,
     line_id_ = line_id;
     col_id_ = col_id;
     letter_ht_ = letter_ht;
+	training_mode_ = training_mode;
+	connection4or8_ = connection4or8;
 }
 
 void Line::FindWordBoxesByMorphing(){
 	pix_words_ = pixDilateBrick(NULL, pix_line_, 1, (letter_ht_>>1)+2);
     pixCloseBrick(pix_words_, pix_words_, letter_ht_ * .6, 1);
-    BOXA* tmp_boxa1 = pixConnCompBB(pix_words_, training_mode ? 4 : 8);
+    BOXA* tmp_boxa1 = pixConnCompBB(pix_words_, connection4or8_);
     BOXA* tmp_boxa2 = NULL;
-    if (training_mode)
+    if (training_mode_)
     	tmp_boxa2 = boxaCopy(tmp_boxa1, L_CLONE);
     else
-    	tmp_boxa2 = boxaSelectBySize(tmp_boxa1, letter_ht_>>2, letter_ht_>>2,
+    	tmp_boxa2 = boxaSelectBySize(tmp_boxa1, letter_ht_>>3, letter_ht_>>3,
                                 L_SELECT_IF_BOTH, L_SELECT_IF_GTE, NULL);
     BOXA* tmp_boxa3 = boxaSort(tmp_boxa2, L_SORT_BY_X, L_SORT_INCREASING, NULL);
 
@@ -112,7 +117,7 @@ void Line::MergeContainedBoxes(PIXA* pixes){
 PIXA* SortGlyphsInAkshara(PIXA* pixes){
 	BOXA* boxes = pixaGetBoxa(pixes, L_CLONE);
 	vector<l_int32> idx(boxes->n);
-	iota(begin(idx), end(idx), static_cast<l_int32>(0));
+	iota(idx.begin(), idx.end(), static_cast<l_int32>(0));
 	sort(idx.begin(), idx.end(), [&boxes](l_int32 i, l_int32 j){
 			l_int32 il, it, iw, ih, jl, jw, jt, jh, ir, jr;
 			boxaGetBoxGeometry(boxes, i, &il, &it, &iw, &ih); ir = il + iw;
@@ -133,18 +138,17 @@ PIXA* SortGlyphsInAkshara(PIXA* pixes){
 
 void Line::FindLetters(){
     PIXA *pixa_letters_tmp1, *pixa_letters_tmp2;
-    pixConnComp(pix_line_, &pixa_letters_tmp1, training_mode ? 4 : 8);
+    pixConnComp(pix_line_, &pixa_letters_tmp1, connection4or8_);
 
-    if (training_mode)
+    if (training_mode_)
     	pixa_letters_tmp2 = pixaCopy(pixa_letters_tmp1, L_CLONE);
     else
     	pixa_letters_tmp2 = pixaSelectBySize(pixa_letters_tmp1,
                                         letter_ht_>>2, letter_ht_>>2,
-                                        L_SELECT_IF_BOTH, L_SELECT_IF_GTE, NULL);
+                                        L_SELECT_IF_EITHER, L_SELECT_IF_GTE, NULL);
     pixa_letters_ = pixaSort(pixa_letters_tmp2, L_SORT_BY_X, L_SORT_INCREASING,
                                                                 NULL, L_CLONE);
-    if (training_mode)
-    	MergeContainedBoxes(pixa_letters_);
+    MergeContainedBoxes(pixa_letters_);
     pixa_letters_ = SortGlyphsInAkshara(pixa_letters_);
     pixaDestroy(&pixa_letters_tmp1);
     pixaDestroy(&pixa_letters_tmp2);

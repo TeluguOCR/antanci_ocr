@@ -3,8 +3,8 @@ INSTALLATION INSTRUCTIONS
 
 How to build banti from scratch.
 
-1) Install git and g++
-	sudo apt-get install git g++ libpng-dev libjpeg-dev
+1) Install git, g++, png, jpeg, tiff, zlib etc.
+	sudo apt-get install git g++ libpng-dev libjpeg-dev libtiff-dev libz-dev
 
 2) Add SSH keys based on 
 	https://help.github.com/articles/generating-ssh-keys
@@ -41,4 +41,10 @@ How to build banti from scratch.
 		C/C++ Build ->  Settings   -> Tool Settings -> GCC Compiler -> Includes 
 	and add /usr/local/include and /usr/local/include/freetype2
 
-9) 
+9) Compile leptonica, gfft, banti
+
+10) Run <path_to_git_directory>/banti/Debug/banti to see full options
+	Increase stack size if you are getting a Seg Fault. 
+		ulimit -s 1000000
+
+

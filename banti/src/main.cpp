@@ -6,25 +6,7 @@
 #include "classifier.h"
 
 using namespace std;
-bool training_mode = false;
 
-/*
-void PrintBestMatches(vector<Blob>& vb, ostream& out=cout,
-					  int n=8, bool print_dists=true){
-	out.setf(ios::fixed);
-    for (size_t i=0; i<vb.size(); ++i){
-    	out << endl << (i+1) << " = ";
-        for (int j=0; j<n; ++j){
-        	size_t jthbest = vb[i].best_matches_[j];
-    		out << "\t" << char_codes[jthbest];
-    		if(print_dists)
-    		out << "\t(" << setw(3) << 1+jthbest << ") - "
-    		   << std::setprecision(3) << setw(6)
-    		   << vb[i].sq_dist_to_means_[jthbest] / 1000000
-    		   << "M\n";
-        }
-    }
-}*/
 void PrintBestMatches(vector<Blob>& vb, ostream& out=cout,
 					  int n=8, bool print_dists=true){
 	out.setf(ios::fixed);
@@ -58,34 +40,43 @@ inline string ChangeFileExtension(const string& name, const string& ext){
 
 int main(int    argc,     char **argv){
     if (argc < 2){
-        cout << "Usage:\nbanti filename.tif [debug_flag=0] [training_mode=0]"
+        cout << "Usage:\nbanti filename.tif [debug_flag=0] [mode=1]"
              << "\n debug_flag(0-7)"
-             << "\n   0 Do nothing"
-             << "\n   1 Print Histograms (Use even number to avoid this)"
-             << "\n   2 Print Line Separation, Baselines, Toplines etc."
-             << "\n   4 Show Cool Images"
-             << "\n  You can also give sums of the above numbers"
-             << "\n training_mode"
-             << "\n   Unspecified: filename.box is NOT written"
-             << "\n   mode = 1   : will not run classifier"
-             << "\n   mode = 0   : will write box file in Tesseract style"
+             << "\n    0 Print/Show nothing (default)"
+             << "\n   +1 Print Histograms (Use even number to avoid this)"
+             << "\n   +2 Print Line Separation, Baselines, Toplines etc."
+             << "\n   +4 Show Cool Images"
+             << "\n mode"
+             << "\n    0 : No Box file, No Classification, No Corrections"
+             << "\n   +1 : Write Box file (default)"
+             << "\n   +2 : Run Classifier"
+             << "\n   +4 : Box file in Tesseract Style"
+             << "\n   +8 : training_mode (Do not adjust for noise, tilt etc.)"
              << "\n"
              ;
         return -1;
     }
-    bool write_box = (argc > 3);
-    if (argc > 3)
-    	if (atoi(argv[3]) == 1)
-    		training_mode = true;
 
     string filename(argv[1]);
-    Page mypage;
+    int debug_flags = 0;
+    if (argc > 2)
+    	debug_flags = atoi(argv[2]);
+
+    int mode = 1;
+    if (argc > 3)
+    	mode = atoi(argv[3]);
+
+    bool write_box = (mode & 1);
+    bool run_classifier = (mode & 2);
+    bool tesseract_style = (mode & 4);
+    bool training_mode = (mode & 8);
+
+    Page mypage(training_mode);
 
     cout << "Processing "<< filename;
     if (mypage.OpenImage(filename) != 0)
     	return -1;
-    if (!training_mode)
-    	mypage.FilterNoise();
+	mypage.FilterNoise();
     mypage.MorphAll();
     mypage.CalcHist();
     mypage.FindBaseLines();
@@ -93,12 +84,12 @@ int main(int    argc,     char **argv){
     mypage.ProcessLines();
 
     vector<Blob> blobs;
-    mypage.LoadBlobs(blobs);
+    if (run_classifier || write_box)
+    	mypage.LoadBlobs(blobs);
 
-    if (argc > 2)
-        mypage.DebugDisplay(cout, atoi(argv[2]));
+	mypage.DebugDisplay(cout, debug_flags);
 
-	if(!training_mode){
+	if(run_classifier){
 	    string exe(argv[0]);
 	    Classifier lda(exe.substr(0, exe.find_last_of('/')));
 		lda.PopulateFeatures(blobs);
@@ -123,11 +114,11 @@ int main(int    argc,     char **argv){
         ofstream fbox;
         fbox.open(ChangeFileExtension(filename, ".box").c_str());
         for (unsigned int i=0; i<blobs.size(); i++)
-        	blobs[i].PrintBoxInfo(fbox, mypage.Height());
+        	blobs[i].PrintBoxInfo(fbox, mypage.Height(), tesseract_style);
         fbox.close();
         cout << "\nWrote box file info to "
         	 << ChangeFileExtension(filename, ".box");
-        if (!training_mode)
+        if (tesseract_style)
         	cout << " (in Tesseract style)";
     }
 

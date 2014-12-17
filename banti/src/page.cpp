@@ -8,14 +8,15 @@
 const float PEAK_THRESHOLD_RATIO = 1 / 10;
 const float ZERO_THRESHOLD_RATIO = 1 / 50;
 
-Page::Page() {
+Page::Page(bool training_mode, int connection4or8) {
+	training_mode_ = training_mode;
+	connection4or8_ = connection4or8;
 	pix_orig_ = pix_words_ = pix_lines_ = pix_temp_ = pix_columns_ = pix_100_
 			= pix_200_ = pix_400_ = NULL;
 	num_cols_ = num_lines_ = 0;
 	x_res_ = y_res_ = 0;
 	best_harmonic_ = 0;
 	base_lines_ = top_lines_ = line_seps_ = vector<int> ();
-
 }
 
 int Page::OpenImage(string name) {
@@ -32,7 +33,7 @@ int Page::OpenImage(string name) {
 	cout << "\n\tWidth: " << width << " Height: " << height << " Depth: "
 		 << depth << " X Res: " << x_res_ << " Y Res: " << y_res_;
 
-  if (training_mode){
+  if (training_mode_){
 	  bool random_rotate = true;
 	  if (random_rotate){
 		  unsigned rand_from_name = 0;
@@ -133,9 +134,11 @@ void inline Page::ResetTempTo(PIX** ppix_target) {
 }
 
 void Page::FilterNoise() {
-	// Median Filter
-	pix_temp_ = pixBlockrank(pix_400_, NULL, 1, 1, 0.5);
-	ResetTempTo(&pix_400_);
+	if (!training_mode_){
+		// Median Filter
+		pix_temp_ = pixBlockrank(pix_400_, NULL, 1, 1, 0.5);
+		ResetTempTo(&pix_400_);
+	}
 }
 
 void Page::Deskew() {
@@ -300,8 +303,10 @@ void Page::SeperateLines() {
 	}
 
 	int letter_ht = VecMedianDiff<int> (base_lines_, top_lines_);
-	if (letter_ht < .2 * best_harmonic_)
+	if (letter_ht < .2 * best_harmonic_){
+		cout << "\n\tMedian Letter Height TOO SMALL? Harmonic could be wrong...\n";
 		letter_ht = .2 * best_harmonic_;
+	}
 	cout << "\n\tMedian Letter Height: " << letter_ht;
 
 	// Populate line info
@@ -311,7 +316,8 @@ void Page::SeperateLines() {
                         line_seps_[i],
 		                base_lines_[i],
 		                pix_400_,
-		                i, 0, letter_ht);
+		                i, 0, letter_ht,
+		                training_mode_, connection4or8_);
 }
 
 void Page::ProcessLines() {
@@ -344,7 +350,7 @@ void Page::PrintHistograms(ostream& ost) {
 
 void Page::PrintLinesInfo(ostream& ost) {
 	int i;
- if (!training_mode){
+ if (!training_mode_){
 	ost << "\nToplines      , ";
 	for (i = 0; i < num_lines_; i++)
 		ost << top_lines_[i] << "(" << base_lines_[i] - top_lines_[i] << "), ";
@@ -407,7 +413,7 @@ void Page::DebugDisplay(ostream &ost, int debug){
 
     if (debug & 2){
         PrintLinesInfo(ost);
-        if (!training_mode)
+        if (!training_mode_)
         	lines_[0].PrintSampleLetter(0);
     }
 

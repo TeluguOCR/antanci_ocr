@@ -60,9 +60,9 @@ string Blob::PackSix(){
     return s;
 }
 
-void Blob::PrintBoxInfo(ostream& out, int ht){
-	if (training_mode){
-	    out
+void Blob::PrintBoxInfo(ostream& out, int ht, bool tesseract_style){
+	if (!tesseract_style){
+            out
 	    	<< '?' << " "
 			<< box_->x << " " << box_->y << " "
 			<< box_->w << " " <<  box_->h << " "
@@ -71,11 +71,11 @@ void Blob::PrintBoxInfo(ostream& out, int ht){
 	    	<< PackSix()
 	    	;
 	}else{
-    out
-    	<< char_codes[best_matches_[0]] << " "
-		<< box_->x << " " << abs(ht - (box_->y + box_->h - 1)) << " "
-		<< box_->x + box_->w - 1 << " " << abs(ht - box_->y) << " "
-		;
+            out
+            << char_codes[best_matches_[0]] << " "
+            << box_->x << " " << abs(ht - (box_->y + box_->h - 1)) << " "
+            << box_->x + box_->w - 1 << " " << abs(ht - box_->y) << " "
+            ;
 	}
     out << endl;
 }
