@@ -106,6 +106,7 @@ void Classifier::PopulateFeatures(Blob& blob){
 
     // Sort
     IncOrder(blob.sq_dist_to_means_, blob.best_matches_);
+    blob.populated_ = true;
 }
 
 void Classifier::PopulateFeatures(vector<Blob>& blobs){

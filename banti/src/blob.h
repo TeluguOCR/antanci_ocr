@@ -23,6 +23,7 @@ public:
     int   base_at_;
     int   letter_ht_;
     float aspect_ratio_;
+    bool populated_;
 
     BOX* box_;
     PIX* pix_;

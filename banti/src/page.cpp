@@ -8,8 +8,8 @@
 const float PEAK_THRESHOLD_RATIO = 1 / 10;
 const float ZERO_THRESHOLD_RATIO = 1 / 50;
 
-Page::Page(bool training_mode, int connection4or8) {
-	training_mode_ = training_mode;
+Page::Page(bool asis_mode, int connection4or8) {
+	asis_mode_ = asis_mode;
 	connection4or8_ = connection4or8;
 	pix_orig_ = pix_words_ = pix_lines_ = pix_temp_ = pix_columns_ = pix_100_
 			= pix_200_ = pix_400_ = NULL;
@@ -33,8 +33,8 @@ int Page::OpenImage(string name) {
 	cout << "\n\tWidth: " << width << " Height: " << height << " Depth: "
 		 << depth << " X Res: " << x_res_ << " Y Res: " << y_res_;
 
-  if (training_mode_){
-	  bool random_rotate = true;
+  if (asis_mode_){
+	  bool random_rotate = false;
 	  if (random_rotate){
 		  unsigned rand_from_name = 0;
 		  for(unsigned i=0; i < name.length(); ++i)
@@ -134,7 +134,7 @@ void inline Page::ResetTempTo(PIX** ppix_target) {
 }
 
 void Page::FilterNoise() {
-	if (!training_mode_){
+	if (!asis_mode_){
 		// Median Filter
 		pix_temp_ = pixBlockrank(pix_400_, NULL, 1, 1, 0.5);
 		ResetTempTo(&pix_400_);
@@ -317,7 +317,7 @@ void Page::SeperateLines() {
 		                base_lines_[i],
 		                pix_400_,
 		                i, 0, letter_ht,
-		                training_mode_, connection4or8_);
+		                asis_mode_, connection4or8_);
 }
 
 void Page::ProcessLines() {
@@ -350,21 +350,20 @@ void Page::PrintHistograms(ostream& ost) {
 
 void Page::PrintLinesInfo(ostream& ost) {
 	int i;
- if (!training_mode_){
-	ost << "\nToplines      , ";
+	ost << "\nToplines(base-top)      : ";
 	for (i = 0; i < num_lines_; i++)
 		ost << top_lines_[i] << "(" << base_lines_[i] - top_lines_[i] << "), ";
 
-	ost << "\nBaselines      , ";
+	ost << "\nBaselines(nextbase-base): ";
 	for (i = 0; i < num_lines_; i++)
 		ost << base_lines_[i] << "(" << base_lines_[i] - (i ? base_lines_[i - 1]
 				: 0) << "), ";
 
-	ost << "\nLineSeperations, ";
+	ost << "\nLineSeperations         : ";
 	for (i = 0; i < num_lines_; i++)
 		ost << line_seps_[i] << ", ";
- }
-	ost << "\nWords_in_Line  , ";
+
+	ost << "\nWords_in_Line : ";
 	for (i = 0; i < num_lines_; i++)
 		ost << lines_[i].GetNumWords() << ", ";
 }
@@ -413,8 +412,7 @@ void Page::DebugDisplay(ostream &ost, int debug){
 
     if (debug & 2){
         PrintLinesInfo(ost);
-        if (!training_mode_)
-        	lines_[0].PrintSampleLetter(0);
+		lines_[0].PrintSampleLetter(0);
     }
 
     if (debug & 4){

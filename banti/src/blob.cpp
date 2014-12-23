@@ -14,6 +14,7 @@ Blob::Blob():best_matches_(NCLASSES) {
     pix64_ = NULL;
     column_id_ = line_id_ = word_id_ = base_at_ = letter_ht_ = -1;
     aspect_ratio_ = -3.14;
+    populated_= false;
 }
 
 void Blob::Init(PIX* pix, BOX* box, int col_id, int line_id, int word_id,
@@ -61,9 +62,14 @@ string Blob::PackSix(){
 }
 
 void Blob::PrintBoxInfo(ostream& out, int ht, bool tesseract_style){
+	string match;
+	if (populated_)
+		match = char_codes[best_matches_[0]];
+	else
+		match = "?";
 	if (!tesseract_style){
             out
-	    	<< '?' << " "
+	    	<< match << " "
 			<< box_->x << " " << box_->y << " "
 			<< box_->w << " " <<  box_->h << " "
 			<< base_at_ << " " << base_at_ - letter_ht_ << " "
@@ -72,7 +78,7 @@ void Blob::PrintBoxInfo(ostream& out, int ht, bool tesseract_style){
 	    	;
 	}else{
             out
-            << char_codes[best_matches_[0]] << " "
+            << match << " "
             << box_->x << " " << abs(ht - (box_->y + box_->h - 1)) << " "
             << box_->x + box_->w - 1 << " " << abs(ht - box_->y) << " "
             ;

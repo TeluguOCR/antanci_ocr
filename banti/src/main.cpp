@@ -47,11 +47,11 @@ int main(int    argc,     char **argv){
              << "\n   +2 Print Line Separation, Baselines, Toplines etc."
              << "\n   +4 Show Cool Images"
              << "\n mode"
-             << "\n    0 : No Box file, No Classification, No Corrections"
-             << "\n   +1 : Write Box file (default)"
-             << "\n   +2 : Run Classifier"
-             << "\n   +4 : Box file in Tesseract Style"
-             << "\n   +8 : training_mode (Do not adjust for noise, tilt etc.)"
+             << "\n    0 : No Box file, No Classification, No AsIs"
+             << "\n   +1 : Write Box file in normal style (default)"
+             << "\n   +3 : Write Box file in Tesseract Style"
+             << "\n   +4 : Run Classifier"
+             << "\n   +8 : asis_mode (Do not adjust for noise, tilt etc.)"
              << "\n"
              ;
         return -1;
@@ -66,14 +66,20 @@ int main(int    argc,     char **argv){
     if (argc > 3)
     	mode = atoi(argv[3]);
 
-    bool write_box = (mode & 1);
-    bool run_classifier = (mode & 2);
-    bool tesseract_style = (mode & 4);
-    bool training_mode = (mode & 8);
+    bool write_box = (bool)(mode & 1);
+    bool tesseract_style = (bool)(mode & 2);
+    bool run_classifier = (bool)(mode & 4);
+    bool asis_mode = (bool)(mode & 8);
 
-    Page mypage(training_mode);
+    Page mypage(asis_mode);
 
-    cout << "Processing "<< filename;
+    cout << "Processing "<< filename
+         << "\n\tMode : " << mode
+		 << ", Write Box: " << write_box
+		 << ", Tesseract Style: " << tesseract_style
+		 << ", Run Classifier: " << run_classifier
+		 << ", As-Is Mode: " << asis_mode << "\n";
+
     if (mypage.OpenImage(filename) != 0)
     	return -1;
 	mypage.FilterNoise();

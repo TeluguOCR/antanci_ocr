@@ -8,7 +8,7 @@ using namespace std;
 class Page{
 protected:
     string img_file_name_;
-    bool training_mode_;
+    bool asis_mode_;
     int connection4or8_;
 
     int x_res_, y_res_;
