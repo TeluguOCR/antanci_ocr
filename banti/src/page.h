@@ -8,6 +8,7 @@ using namespace std;
 class Page{
 protected:
     string img_file_name_;
+    string base_file_name_;
     bool asis_mode_;
     int connection4or8_;
 

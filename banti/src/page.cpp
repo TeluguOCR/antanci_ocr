@@ -21,6 +21,9 @@ Page::Page(bool asis_mode, int connection4or8) {
 
 int Page::OpenImage(string name) {
 	img_file_name_ = name;
+	int from = name.find_last_of('/')+1, to = name.find_last_of('.');
+	base_file_name_ = name.substr(from, to-from);
+
 	pix_orig_ = pixRead(name.c_str());
 	if (pix_orig_ == NULL) {
 		cout << "Pixs Not made, File could not be opened";
@@ -302,12 +305,12 @@ void Page::SeperateLines() {
 		line_seps_.push_back(last_found_sep);
 	}
 
-	int letter_ht = VecMedianDiff<int> (base_lines_, top_lines_);
-	if (letter_ht < .2 * best_harmonic_){
-		cout << "\n\tMedian Letter Height TOO SMALL? Harmonic could be wrong...\n";
-		letter_ht = .2 * best_harmonic_;
+	int xht = VecMedianDiff<int> (base_lines_, top_lines_);
+	if (xht < .2 * best_harmonic_){
+		cout << "\n\tMedian XHeight TOO SMALL? Harmonic could be wrong...\n";
+		xht = .2 * best_harmonic_;
 	}
-	cout << "\n\tMedian Letter Height: " << letter_ht;
+	cout << "\n\tMedian XHeight: " << xht;
 
 	// Populate line info
 	lines_.resize(num_lines_);
@@ -316,7 +319,7 @@ void Page::SeperateLines() {
                         line_seps_[i],
 		                base_lines_[i],
 		                pix_400_,
-		                i, 0, letter_ht,
+		                i, 0, xht,
 		                asis_mode_, connection4or8_);
 }
 
@@ -370,13 +373,13 @@ void Page::PrintLinesInfo(ostream& ost) {
 
 void Page::DisplayMorphedImages(int reduction) {
 	if (pix_400_)
-		pixDisplayWriteFormat(pix_400_, reduction, IFF_PNG);
+		pixDisplayWriteFormatName(pix_400_, reduction, IFF_PNG, base_file_name_.c_str());
 	if (pix_words_)
-		pixDisplayWriteFormat(pix_words_, reduction, IFF_PNG);
+		pixDisplayWriteFormatName(pix_words_, reduction, IFF_PNG, base_file_name_.c_str());
 	if (pix_lines_)
-		pixDisplayWriteFormat(pix_lines_, reduction, IFF_PNG);
+		pixDisplayWriteFormatName(pix_lines_, reduction, IFF_PNG, base_file_name_.c_str());
 	if (pix_columns_)
-		pixDisplayWriteFormat(pix_columns_, reduction, IFF_PNG);
+		pixDisplayWriteFormatName(pix_columns_, reduction, IFF_PNG, base_file_name_.c_str());
 }
 
 void Page::DisplayLinesImage() {
@@ -389,7 +392,7 @@ void Page::DisplayLinesImage() {
 		pixRenderLineArb(pix_debug, 0, line_seps_[i], w400_ - 1, line_seps_[i], 1,
 				0, 0, 255);
 	}
-	pixDisplayWriteFormat(pix_debug, 1, IFF_PNG);
+	pixDisplayWriteFormatName(pix_debug, 1, IFF_PNG, base_file_name_.c_str());
 	pixDestroy(&pix_debug);
 }
 
@@ -402,7 +405,7 @@ void Page::DisplayFromLines() {
 	for (int i = 0; i < num_lines_; ++i)
 		lines_[i].PrintColorLetters(pix_debug, index);
 	pix_debug->colormap->n = 256;
-    pixDisplayWriteFormat(pix_debug, 1, IFF_PNG);
+    pixDisplayWriteFormatName(pix_debug, 1, IFF_PNG, base_file_name_.c_str());
     pixDestroy(&pix_debug);
 }
 
@@ -412,7 +415,7 @@ void Page::DebugDisplay(ostream &ost, int debug){
 
     if (debug & 2){
         PrintLinesInfo(ost);
-		lines_[0].PrintSampleLetter(0);
+//		lines_[0].PrintSampleLetter(0);
     }
 
     if (debug & 4){
@@ -420,7 +423,9 @@ void Page::DebugDisplay(ostream &ost, int debug){
         DisplayMorphedImages();
         DisplayLinesImage();
         DisplayFromLines();
-        pixDisplayMultiple("/tmp/junk_write_display*");
+        string tmp_name = string("/tmp/") + base_file_name_ + string("*");
+        cout << "\nCool Images at " << tmp_name;
+        pixDisplayMultiple(tmp_name.c_str());
     }
 }
 

@@ -21,7 +21,7 @@ public:
     int   line_id_;
     int   word_id_;
     int   base_at_;
-    int   letter_ht_;
+    int   xht_;
     float aspect_ratio_;
     bool populated_;
 

@@ -2228,6 +2228,7 @@ LEPT_DLL extern l_int32 pixDisplayWithTitle ( PIX *pixs, l_int32 x, l_int32 y, c
 LEPT_DLL extern l_int32 pixDisplayMultiple ( const char *filepattern );
 LEPT_DLL extern l_int32 pixDisplayWrite ( PIX *pixs, l_int32 reduction );
 LEPT_DLL extern l_int32 pixDisplayWriteFormat ( PIX *pixs, l_int32 reduction, l_int32 format );
+LEPT_DLL extern l_int32 pixDisplayWriteFormatName ( PIX *pixs, l_int32 reduction, l_int32 format, const char *fname );
 LEPT_DLL extern l_int32 pixSaveTiled ( PIX *pixs, PIXA *pixa, l_int32 reduction, l_int32 newrow, l_int32 space, l_int32 dp );
 LEPT_DLL extern l_int32 pixSaveTiledOutline ( PIX *pixs, PIXA *pixa, l_int32 reduction, l_int32 newrow, l_int32 space, l_int32 linewidth, l_int32 dp );
 LEPT_DLL extern l_int32 pixSaveTiledWithText ( PIX *pixs, PIXA *pixa, l_int32 outwidth, l_int32 newrow, l_int32 space, l_int32 linewidth, L_BMF *bmf, const char *textstr, l_uint32 val, l_int32 location );

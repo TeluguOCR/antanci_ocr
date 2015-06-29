@@ -13,7 +13,7 @@ using namespace std;
 
 Line::Line(){
 	training_mode_ = false;
-	connection4or8_ = 4;
+	connection4or8_ = 0;
     box_line_ = NULL;
     word_boxes_ = NULL;
     pix_line_ = pix_words_ = NULL;
@@ -34,7 +34,7 @@ Line::~Line(){
 }
 
 void Line::Init(int top, int bottom, int base_line, PIX* mother,
-                int line_id, int col_id, int letter_ht,
+                int line_id, int col_id, int xht,
                 bool training_mode, int connection4or8){
     top_ = top;
     bottom_ = bottom;
@@ -43,20 +43,20 @@ void Line::Init(int top, int bottom, int base_line, PIX* mother,
     pix_line_ = pixClipRectangle(mother, box_line_, NULL);
     line_id_ = line_id;
     col_id_ = col_id;
-    letter_ht_ = letter_ht;
+    xht_ = xht;
 	training_mode_ = training_mode;
 	connection4or8_ = connection4or8;
 }
 
 void Line::FindWordBoxesByMorphing(){
-	pix_words_ = pixDilateBrick(NULL, pix_line_, 1, (letter_ht_>>1)+2);
-    pixCloseBrick(pix_words_, pix_words_, letter_ht_ * .6, 1);
+	pix_words_ = pixDilateBrick(NULL, pix_line_, 1, (xht_>>1)+2);
+    pixCloseBrick(pix_words_, pix_words_, xht_ * .6, 1);
     BOXA* tmp_boxa1 = pixConnCompBB(pix_words_, connection4or8_);
     BOXA* tmp_boxa2 = NULL;
     if (training_mode_)
     	tmp_boxa2 = boxaCopy(tmp_boxa1, L_CLONE);
     else
-    	tmp_boxa2 = boxaSelectBySize(tmp_boxa1, letter_ht_>>3, letter_ht_>>3,
+    	tmp_boxa2 = boxaSelectBySize(tmp_boxa1, xht_>>3, xht_>>3,
                                 L_SELECT_IF_BOTH, L_SELECT_IF_GTE, NULL);
     BOXA* tmp_boxa3 = boxaSort(tmp_boxa2, L_SORT_BY_X, L_SORT_INCREASING, NULL);
 
@@ -144,7 +144,7 @@ void Line::FindLetters(){
     	pixa_letters_tmp2 = pixaCopy(pixa_letters_tmp1, L_CLONE);
     else
     	pixa_letters_tmp2 = pixaSelectBySize(pixa_letters_tmp1,
-                                        letter_ht_>>2, letter_ht_>>2,
+                                        xht_>>2, xht_>>2,
                                         L_SELECT_IF_EITHER, L_SELECT_IF_GTE, NULL);
     pixa_letters_ = pixaSort(pixa_letters_tmp2, L_SORT_BY_X, L_SORT_INCREASING,
                                                                 NULL, L_CLONE);
@@ -175,7 +175,7 @@ void Line::LoadBlobs(vector<Blob>::iterator& itr){
         // Add the letter
         box->y = box->y + top_;
         itr->Init(pixaGetPix(pixa_letters_, i, L_CLONE),
-                box, col_id_, line_id_, word_id, base_line_, letter_ht_);
+                box, col_id_, line_id_, word_id, base_line_, xht_);
         ++itr;
     }
 }

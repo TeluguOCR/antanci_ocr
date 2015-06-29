@@ -26,7 +26,7 @@ class Line{
 	BOXA* word_boxes_;
 	PIXA* pixa_letters_;
 	int top_, bottom_, base_line_;
-    int letter_ht_;
+    int xht_;
 
 	BOXA* CheckOverlapBoxes(BOXA* boxes);
 	bool inline ShouldMixBoxes(BOX* b1, BOX* b2);

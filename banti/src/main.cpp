@@ -71,7 +71,7 @@ int main(int    argc,     char **argv){
     bool run_classifier = (bool)(mode & 4);
     bool asis_mode = (bool)(mode & 8);
 
-    Page mypage(asis_mode);
+    Page mypage(asis_mode, 4);
 
     cout << "Processing "<< filename
          << "\n\tMode : " << mode

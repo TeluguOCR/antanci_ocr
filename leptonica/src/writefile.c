@@ -939,6 +939,15 @@ pixDisplayWriteFormat(PIX     *pixs,
                       l_int32  reduction,
                       l_int32  format)
 {
+	return pixDisplayWriteFormatName(pixs, reduction, format, "junk_display");
+}
+
+l_int32
+pixDisplayWriteFormatName(PIX     *pixs,
+                      l_int32  reduction,
+                      l_int32  format,
+                      const char *fname)
+{
 char            buffer[L_BUF_SIZE];
 l_int32         ignore;
 l_float32       scale;
@@ -961,7 +970,7 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
 
     if (index == 0) {
         snprintf(buffer, L_BUF_SIZE,
-           "rm -f /tmp/junk_write_display.*.png /tmp/junk_write_display.*.jpg");
+           "rm -f /tmp/%s.*.png /tmp/%s.*.jpg", fname, fname);
         ignore = system(buffer);
     }
     index++;
@@ -978,17 +987,17 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
 
     if (pixGetDepth(pixt) == 16) {
         pix8 = pixMaxDynamicRange(pixt, L_LOG_SCALE);
-        snprintf(buffer, L_BUF_SIZE, "/tmp/junk_write_display.%03d.png", index);
+        snprintf(buffer, L_BUF_SIZE, "/tmp/%s.%03d.png", fname, index);
         pixWrite(buffer, pix8, IFF_PNG);
         pixDestroy(&pix8);
     }
     else if (pixGetDepth(pixt) < 8 || pixGetColormap(pixt) ||
              format == IFF_PNG) {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/junk_write_display.%03d.png", index);
+        snprintf(buffer, L_BUF_SIZE, "/tmp/%s.%03d.png", fname, index);
         pixWrite(buffer, pixt, IFF_PNG);
     }
     else {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/junk_write_display.%03d.jpg", index);
+        snprintf(buffer, L_BUF_SIZE, "/tmp/%s.%03d.jpg", fname, index);
         pixWrite(buffer, pixt, format);
     }
     pixDestroy(&pixt);
