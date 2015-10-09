@@ -18,14 +18,11 @@ How to build banti from scratch.
 1. Get latest version of Eclipse C++. Specific instructions for Ubuntu:
 	
 	1. Copy extracted directory to /opt
-	
 	1. Creat shortcut
 		```sh
 		sudo ln -s -T /opt/eclipse/eclipse /usr/bin/eclipse
 		```
-	
 	1.	Add application by creating /usr/share/applications/eclipse.desktop
-	
 	1.	If titles are not showing specify in the above file:
 		```sh
 		Exec=env UBUNTU_MENUPROXY= eclipse
