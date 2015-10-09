@@ -32,29 +32,26 @@ How to build banti from scratch.
 	Check the option ```Search for Nested Projects```
 
 1. Install Freetype
-	Download latest source from 
-		http://sourceforge.net/projects/freetype/files/freetype2/
-	Unzip 
-	Run the usual
-		```sh
+	1. Download latest source from http://sourceforge.net/projects/freetype/files/freetype2/
+	1. Unzip 
+	1. Run the usual
+		```
 		./configure
 		make -j4 
 		sudo make install
 		```
-	
-	(ONLY) If you are getting Freetype errors, go to the properties of leptonica project
-		C/C++ Build ->  Settings   -> Tool Settings -> GCC Compiler -> Includes 
-	and add /usr/local/include and /usr/local/include/freetype2
+	1. (ONLY) If you are getting Freetype errors, go to the properties of leptonica project ```C/C++ Build ->  Settings   -> Tool Settings -> GCC Compiler -> Includes``` and add ```/usr/local/include``` and ```/usr/local/include/freetype2```
 
 1. Compile leptonica, gfft, banti
 
-1. Run <path_to_git_directory>/banti/Debug/banti to see full options
-	Increase stack size if you are getting a Seg Fault. 
-		```sh
-		ulimit -s 1000000
-		```
+1. Run ```<path_to_git_directory>/banti/Debug/banti``` to see full options. 
 
-1. If you want to run classifier you will need to have the data 
-    (charcodes.txt, cp.bin, sm.bin, wr.bin) in the data directory 
-    (symbolically) located in the same folder as the executable. 
-    e.g.:- <path_to_git_directory>//banti/Debug$ ln -s -T ../../data/ data
+	Increase stack size if you are getting a Seg Fault. 
+	```sh
+	ulimit -s 1000000
+	```
+
+1. If you want to run classifier you will need to have the data (charcodes.txt, cp.bin, sm.bin, wr.bin) in the data directory (symbolically) located in the same folder as the executable. 
+	```sh
+	<path_to_git_directory>//banti/Debug$ ln -s -T ../../data/ data
+	```
