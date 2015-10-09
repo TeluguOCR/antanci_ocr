@@ -35,11 +35,11 @@ How to build banti from scratch.
 	1. Download latest source from http://sourceforge.net/projects/freetype/files/freetype2/
 	1. Unzip 
 	1. Run the usual
-		```
-		./configure
-		make -j4 
-		sudo make install
-		```
+	```sh
+	./configure
+	make -j4 
+	sudo make install
+	```
 	1. (ONLY) If you are getting Freetype errors, go to the properties of leptonica project ```C/C++ Build ->  Settings   -> Tool Settings -> GCC Compiler -> Includes``` and add ```/usr/local/include``` and ```/usr/local/include/freetype2```
 
 1. Compile leptonica, gfft, banti
