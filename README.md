@@ -25,9 +25,11 @@ How to build banti from scratch.
 
 1. Set workspace to the directory you cloned to (say /d/ocr/)
 
-1. File -> Import -> General -> Existing Projects into Workspace
+1. ```File -> Import -> General -> Existing Projects into Workspace```
+
 	Specify the directory you cloned to 
-	Check the option "Search for Nested Projects"
+	
+	Check the option ```Search for Nested Projects```
 
 1. Install Freetype
 	Download latest source from 
