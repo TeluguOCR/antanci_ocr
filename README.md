@@ -1,6 +1,8 @@
 INSTALLATION INSTRUCTIONS
 ------------ ------------
 
+> If you are on a 64-bit linux machine, you could just try running [this 	file](https://stanford.edu/~rakesha/banti/banti_segmenter), that has been pre-built for you (based on the 	instructions below). 
+
 How to build banti from scratch.
 
 1. Install `git`, `g++`, `png`, `jpeg`, `tiff`, `zlib` etc.
