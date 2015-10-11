@@ -50,10 +50,9 @@ How to build banti from scratch.
 1. Run banti! 
 	```sh
 	<path_to_cloned_directory>/banti/Debug/banti images/praasa.tif 6 1	
-	```
-	Run with no arguments to see all the options.
-	Increase stack size if you are getting a Seg Fault. 
-	```sh
+	# Run with no arguments to see all the options.
+
+	# Increase stack size if you are getting a Seg Fault. 
 	ulimit -s 1000000
 	```
 
