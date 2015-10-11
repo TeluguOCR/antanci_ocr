@@ -47,8 +47,11 @@ How to build banti from scratch.
 	1. Right click on the `leptonica` project and select properties (`Alt Enter`) 
 	2. Go to `C/C++ Build ->  Settings   -> Tool Settings -> GCC Compiler -> Includes` and add `/usr/local/include` and `/usr/local/include/freetype2`
 
-1. Run `<path_to_git_directory>/banti/Debug/banti` to see full options. 
-
+1. Run banti! 
+	```sh
+	<path_to_cloned_directory>/banti/Debug/banti images/praasa.tif 6 1	
+	```
+	Run with no arguments to see all the options.
 	Increase stack size if you are getting a Seg Fault. 
 	```sh
 	ulimit -s 1000000
