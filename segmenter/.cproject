@@ -77,7 +77,7 @@
 					</folderInfo>
 					<fileInfo id="cdt.managedbuild.config.gnu.cross.exe.debug.1200612136.2047648397" name="line.cpp" rcbsApplicability="disable" resourcePath="src/line.cpp" toolsToInvoke="cdt.managedbuild.tool.gnu.cpp.compiler.base.1669681509.1819396218">
 						<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1669681509.1819396218" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1669681509">
-							<option id="gnu.cpp.compiler.option.dialect.std.1374374766" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++1y" valueType="enumerated"/>
+							<option id="gnu.cpp.compiler.option.dialect.std.1374374766" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++1y" valueType="enumerated"/>
 							<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.890352809" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 						</tool>
 					</fileInfo>

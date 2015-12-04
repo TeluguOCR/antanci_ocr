@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>banti</name>
+	<name>segmenter</name>
 	<comment></comment>
 	<projects>
 		<project>gfft</project>
