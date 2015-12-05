@@ -58,5 +58,5 @@ INSTALLATION INSTRUCTIONS
 
 1. If you want to run classifier you will need to have the data (`charcodes.txt`, `cp.bin`, `sm.bin`, `wr.bin`) in the data directory (symbolically) located in the same folder as the executable. 
 	```sh
-	<path_to_git_directory>//banti/Debug$ ln -s -T ../../data/ data
+	<path_to_git_directory>/banti/Debug$ ln -s -T ../../dct_lda/output
 	```
