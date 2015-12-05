@@ -12,7 +12,7 @@ INSTALLATION INSTRUCTIONS
 
 1. Clone this project
 	```sh
-	git clone git@github.com:rakeshvar/banti.git
+	git clone git@github.com:TeluguOCR/banti_segmenter.git
 	```
 
 1. Get latest version of Eclipse C++. Specific instructions for Ubuntu:
@@ -41,15 +41,15 @@ INSTALLATION INSTRUCTIONS
 	sudo make install
 	```
 
-1. Build all the three `leptonica`, `gfft`, `banti`. Go to the `Project` menu and click `Build All` (`Ctrl B`).
+1. Build all the three `leptonica`, `gfft`, `segmenter`. Go to the `Project` menu and click `Build All` (`Ctrl B`).
 
 	(ONLY) If you are getting Freetype errors, go to the properties of leptonica project.
 	1. Right click on the `leptonica` project and select properties (`Alt Enter`) 
 	2. Go to `C/C++ Build ->  Settings   -> Tool Settings -> GCC Compiler -> Includes` and add `/usr/local/include` and `/usr/local/include/freetype2`
 
-1. Run banti! 
+1. Run segmenter! 
 	```sh
-	<path_to_cloned_directory>/banti/Debug/banti images/praasa.tif 6 1	
+	<path_to_cloned_directory>/segmenter/Debug/segmenter images/praasa.tif 6 1	
 	# Run with no arguments to see all the options.
 
 	# Increase stack size if you are getting a Seg Fault. 
@@ -58,5 +58,5 @@ INSTALLATION INSTRUCTIONS
 
 1. If you want to run classifier you will need to have the data (`charcodes.txt`, `cp.bin`, `sm.bin`, `wr.bin`) in the data directory (symbolically) located in the same folder as the executable. 
 	```sh
-	<path_to_git_directory>/banti/Debug$ ln -s -T ../../dct_lda/output
+	<path_to_git_directory>/segmenter/Debug$ ln -s -T ../../dct_lda/output
 	```
